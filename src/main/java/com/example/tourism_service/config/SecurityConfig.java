@@ -27,7 +27,6 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final UserSessionRepository sessionRepository;
 
-    // Ручной конструктор вместо @RequiredArgsConstructor
     public SecurityConfig(JwtTokenProvider tokenProvider,
                           UserDetailsService userDetailsService,
                           UserSessionRepository sessionRepository) {
@@ -46,12 +45,16 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login", "/api/auth/refresh").permitAll()
                         .requestMatchers("/api/auth/register").hasRole("ADMIN")
+
+                        .requestMatchers("/api/licenses/activate", "/api/licenses/check").permitAll()
+                        .requestMatchers("/api/licenses/create", "/api/licenses/renew").hasAnyRole("ADMIN", "GUIDE")
+
                         .requestMatchers(HttpMethod.GET, "/api/tours/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/tours/**").hasAnyRole("ADMIN", "GUIDE")
+
                         .anyRequest().authenticated()
                 );
 
-        // Используем внедренные зависимости для создания фильтра
         http.addFilterBefore(
                 new JwtAuthenticationFilter(tokenProvider, userDetailsService, sessionRepository),
                 UsernamePasswordAuthenticationFilter.class
