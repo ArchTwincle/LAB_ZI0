@@ -3,7 +3,6 @@ package com.example.tourism_service.config;
 import com.example.tourism_service.repository.UserSessionRepository;
 import com.example.tourism_service.security.JwtAuthenticationFilter;
 import com.example.tourism_service.security.JwtTokenProvider;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -22,43 +21,37 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtTokenProvider tokenProvider;
     private final UserDetailsService userDetailsService;
-    // Репозиторий нужен для передачи в фильтр, чтобы проверять статус сессии в БД
     private final UserSessionRepository sessionRepository;
+
+    // Ручной конструктор вместо @RequiredArgsConstructor
+    public SecurityConfig(JwtTokenProvider tokenProvider,
+                          UserDetailsService userDetailsService,
+                          UserSessionRepository sessionRepository) {
+        this.tokenProvider = tokenProvider;
+        this.userDetailsService = userDetailsService;
+        this.sessionRepository = sessionRepository;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // 1. Отключаем CSRF, так как используем JWT (Stateless)
                 .csrf(csrf -> csrf.disable())
-
-                // 2. Настраиваем сервер на работу без сохранения сессий в памяти
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-
-                // 3. Правила доступа к эндпоинтам
                 .authorizeHttpRequests(auth -> auth
-                        // Разрешаем вход и обновление токенов всем
                         .requestMatchers("/api/auth/login", "/api/auth/refresh").permitAll()
-
-                        // Регистрация доступна только администратору
                         .requestMatchers("/api/auth/register").hasRole("ADMIN")
-
-                        // Публичные и защищенные маршруты для туров
                         .requestMatchers(HttpMethod.GET, "/api/tours/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/tours/**").hasAnyRole("ADMIN", "GUIDE")
-
-                        // Все остальные запросы требуют авторизации
                         .anyRequest().authenticated()
                 );
 
-        // 4. Добавляем JWT фильтр перед стандартным фильтром аутентификации.
-        // Передаем ТРИ аргумента: провайдер, сервис пользователей и репозиторий сессий.
+        // Используем внедренные зависимости для создания фильтра
         http.addFilterBefore(
                 new JwtAuthenticationFilter(tokenProvider, userDetailsService, sessionRepository),
                 UsernamePasswordAuthenticationFilter.class

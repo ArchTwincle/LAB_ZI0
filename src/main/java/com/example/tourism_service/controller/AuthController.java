@@ -3,7 +3,6 @@ package com.example.tourism_service.controller;
 import com.example.tourism_service.dto.JwtResponse;
 import com.example.tourism_service.service.AuthService;
 import com.example.tourism_service.service.UserService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -13,12 +12,20 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
+
+    // Явный конструктор для внедрения зависимостей вместо @RequiredArgsConstructor
+    public AuthController(AuthService authService,
+                          UserService userService,
+                          AuthenticationManager authenticationManager) {
+        this.authService = authService;
+        this.userService = userService;
+        this.authenticationManager = authenticationManager;
+    }
 
     // Вход: проверяем пароль и выдаем пару токенов
     @PostMapping("/login")

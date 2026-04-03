@@ -2,20 +2,23 @@ package com.example.tourism_service.security;
 
 import com.example.tourism_service.entity.User;
 import com.example.tourism_service.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
+// 1. УБЕДИСЬ, ЧТО ЗДЕСЬ НЕТ @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
+
+    // 2. ДОБАВЬ ЭТОТ КОНСТРУКТОР
+    public CustomUserDetailsService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

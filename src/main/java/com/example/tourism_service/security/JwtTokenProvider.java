@@ -2,21 +2,34 @@ package com.example.tourism_service.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
 import java.security.Key;
 import java.util.Date;
 
 @Component
 public class JwtTokenProvider {
 
-    // В реальном проекте вынеси это в application.properties
-    private final String secret = "myVerySecretKeyForJwtAuthenticationMustBeVeryLongAndStrong123456";
-    private final Key key = Keys.hmacShaKeyFor(secret.getBytes());
+    // Считываем секрет из application.properties
+    @Value("${jwt.secret}")
+    private String secret;
 
-    // Access-токен на 15 минут
-    private final long accessExpiration = 15 * 60 * 1000;
-    // Refresh-токен на 7 дней
-    private final long refreshExpiration = 7 * 24 * 60 * 60 * 1000;
+    // Считываем время жизни из application.properties (опционально, но лучше сделать так)
+    @Value("${jwt.access-expiration}")
+    private long accessExpiration;
+
+    @Value("${jwt.refresh-expiration}")
+    private long refreshExpiration;
+
+    private Key key;
+
+    // Этот метод выполнится ПОСЛЕ того, как Spring подставит значения из конфига
+    @PostConstruct
+    protected void init() {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes());
+    }
 
     public String generateAccessToken(String username) {
         return generateToken(username, accessExpiration);
@@ -45,7 +58,7 @@ public class JwtTokenProvider {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
-            return false; // Токен невалиден или просрочен
+            return false;
         }
     }
 }
