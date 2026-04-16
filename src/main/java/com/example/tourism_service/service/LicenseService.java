@@ -62,7 +62,7 @@ public class LicenseService {
         license.setProduct(product);
         license.setType(licenseType);
 
-        // При создании лицензия еще не активирована
+        // Лицензия создаётся, но ещё не активирована
         license.setFirstActivationDate(null);
         license.setEndingDate(null);
 
@@ -192,6 +192,10 @@ public class LicenseService {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
+        if (license.getFirstActivationDate() == null) {
+            throw new RuntimeException("Нельзя продлить неактивированную лицензию");
+        }
+
         int extraDays = request.getExtraDays() != null ? request.getExtraDays() : 0;
         LocalDate baseDate = license.getEndingDate() != null && license.getEndingDate().isAfter(LocalDate.now())
                 ? license.getEndingDate()
@@ -218,7 +222,7 @@ public class LicenseService {
 
         long ttlSeconds = 0;
         if (license.getEndingDate() != null) {
-            LocalDateTime expirationDateTime = license.getEndingDate().atStartOfDay();
+            LocalDateTime expirationDateTime = license.getEndingDate().plusDays(1).atStartOfDay();
             ttlSeconds = Math.max(0, ChronoUnit.SECONDS.between(now, expirationDateTime));
         }
 
