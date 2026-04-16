@@ -61,8 +61,11 @@ public class LicenseService {
         license.setOwner(owner);
         license.setProduct(product);
         license.setType(licenseType);
+
+        // При создании лицензия еще не активирована
         license.setFirstActivationDate(null);
-        license.setEndingDate(LocalDate.now().plusDays(licenseType.getDefaultDurationInDays()));
+        license.setEndingDate(null);
+
         license.setBlocked(false);
         license.setDeviceCount(request.getDeviceCount() != null ? request.getDeviceCount() : 1);
         license.setDescription(request.getDescription());
@@ -89,11 +92,13 @@ public class LicenseService {
             throw new RuntimeException("Лицензия заблокирована");
         }
 
-        if (license.getEndingDate().isBefore(LocalDate.now())) {
+        if (license.getEndingDate() != null &&
+                license.getEndingDate().isBefore(LocalDate.now())) {
             throw new RuntimeException("Срок действия лицензии истек");
         }
 
-        if (license.getProduct() != null && Boolean.TRUE.equals(license.getProduct().getIsBlocked())) {
+        if (license.getProduct() != null &&
+                Boolean.TRUE.equals(license.getProduct().getIsBlocked())) {
             throw new RuntimeException("Продукт заблокирован");
         }
 
@@ -106,16 +111,17 @@ public class LicenseService {
                     return deviceRepository.save(newDevice);
                 });
 
-        long currentDeviceCount = deviceLicenseRepository.countByLicenseId(license.getId());
-        if (currentDeviceCount >= license.getDeviceCount()) {
-            throw new RuntimeException("Превышен лимит устройств для лицензии");
-        }
-
         boolean alreadyActivated = deviceLicenseRepository
                 .findByLicenseIdAndDeviceId(license.getId(), device.getId())
                 .isPresent();
 
         if (!alreadyActivated) {
+            long currentDeviceCount = deviceLicenseRepository.countByLicenseId(license.getId());
+
+            if (currentDeviceCount >= license.getDeviceCount()) {
+                throw new RuntimeException("Превышен лимит устройств для лицензии");
+            }
+
             DeviceLicense deviceLicense = new DeviceLicense();
             deviceLicense.setLicense(license);
             deviceLicense.setDevice(device);
@@ -125,16 +131,27 @@ public class LicenseService {
 
         if (license.getFirstActivationDate() == null) {
             license.setFirstActivationDate(LocalDate.now());
+
+            if (license.getType() != null) {
+                license.setEndingDate(
+                        LocalDate.now().plusDays(
+                                license.getType().getDefaultDurationInDays()
+                        )
+                );
+            }
+
             licenseRepository.save(license);
         }
 
-        LicenseHistory history = new LicenseHistory();
-        history.setLicense(license);
-        history.setUser(license.getOwner());
-        history.setStatus("ACTIVATED");
-        history.setChangeDate(LocalDate.now());
-        history.setDescription("Лицензия активирована на устройстве: " + request.getMacAddress());
-        licenseHistoryRepository.save(history);
+        if (!alreadyActivated) {
+            LicenseHistory history = new LicenseHistory();
+            history.setLicense(license);
+            history.setUser(license.getOwner());
+            history.setStatus("ACTIVATED");
+            history.setChangeDate(LocalDate.now());
+            history.setDescription("Лицензия активирована на устройстве: " + request.getMacAddress());
+            licenseHistoryRepository.save(history);
+        }
 
         return buildTicketResponse(license, device);
     }
@@ -143,6 +160,20 @@ public class LicenseService {
     public TicketResponse checkLicense(CheckLicenseRequest request) {
         License license = licenseRepository.findByCode(request.getLicenseCode())
                 .orElseThrow(() -> new RuntimeException("Лицензия не найдена"));
+
+        if (Boolean.TRUE.equals(license.getBlocked())) {
+            throw new RuntimeException("Лицензия заблокирована");
+        }
+
+        if (license.getEndingDate() != null &&
+                license.getEndingDate().isBefore(LocalDate.now())) {
+            throw new RuntimeException("Срок действия лицензии истек");
+        }
+
+        if (license.getProduct() != null &&
+                Boolean.TRUE.equals(license.getProduct().getIsBlocked())) {
+            throw new RuntimeException("Продукт заблокирован");
+        }
 
         Device device = deviceRepository.findByMacAddress(request.getMacAddress())
                 .orElseThrow(() -> new RuntimeException("Устройство не найдено"));
@@ -162,7 +193,7 @@ public class LicenseService {
                 .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
 
         int extraDays = request.getExtraDays() != null ? request.getExtraDays() : 0;
-        LocalDate baseDate = license.getEndingDate().isAfter(LocalDate.now())
+        LocalDate baseDate = license.getEndingDate() != null && license.getEndingDate().isAfter(LocalDate.now())
                 ? license.getEndingDate()
                 : LocalDate.now();
 

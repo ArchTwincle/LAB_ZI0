@@ -2,6 +2,7 @@ package com.example.tourism_service.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -9,7 +10,6 @@ import java.util.UUID;
 @Table(name = "license")
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class License {
-
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -33,7 +33,7 @@ public class License {
     @Column(name = "first_activation_date")
     private LocalDate firstActivationDate;
 
-    @Column(name = "ending_date", nullable = false)
+    @Column(name = "ending_date")
     private LocalDate endingDate;
 
     @Column(nullable = false)
