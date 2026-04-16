@@ -31,3 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Keystores / signing keys ###
+src/main/resources/signing.p12
+src/main/resources/staviskiy_server.jks
+*.p12
+*.jks
+*.pfx
