@@ -44,13 +44,18 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login", "/api/auth/refresh").permitAll()
-                        .requestMatchers("/api/auth/register").hasRole("ADMIN")
+                        .requestMatchers("/api/auth/register").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
 
-                        .requestMatchers("/api/licenses/activate", "/api/licenses/check").permitAll()
-                        .requestMatchers("/api/licenses/create", "/api/licenses/renew").hasAnyRole("ADMIN", "GUIDE")
+                        .requestMatchers("/api/licenses/create").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
+                        .requestMatchers("/api/licenses/activate").hasAnyAuthority("USER", "ADMIN", "ROLE_USER", "ROLE_ADMIN")
+                        .requestMatchers("/api/licenses/check").hasAnyAuthority("USER", "ADMIN", "ROLE_USER", "ROLE_ADMIN")
+                        .requestMatchers("/api/licenses/renew").hasAnyAuthority("USER", "ADMIN", "ROLE_USER", "ROLE_ADMIN")
+
+                        .requestMatchers("/licenses").hasAnyAuthority("ADMIN", "ROLE_ADMIN")
+                        .requestMatchers("/licenses/**").hasAnyAuthority("USER", "ADMIN", "ROLE_USER", "ROLE_ADMIN")
 
                         .requestMatchers(HttpMethod.GET, "/api/tours/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/tours/**").hasAnyRole("ADMIN", "GUIDE")
+                        .requestMatchers(HttpMethod.POST, "/api/tours/**").hasAnyAuthority("ADMIN", "GUIDE", "ROLE_ADMIN", "ROLE_GUIDE")
 
                         .anyRequest().authenticated()
                 );

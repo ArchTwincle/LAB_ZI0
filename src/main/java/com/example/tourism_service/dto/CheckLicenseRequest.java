@@ -4,6 +4,7 @@ public class CheckLicenseRequest {
 
     private String licenseCode;
     private String macAddress;
+    private String productId;
 
     public CheckLicenseRequest() {
     }
@@ -22,5 +23,13 @@ public class CheckLicenseRequest {
 
     public void setMacAddress(String macAddress) {
         this.macAddress = macAddress;
+    }
+
+    public String getProductId() {
+        return productId;
+    }
+
+    public void setProductId(String productId) {
+        this.productId = productId;
     }
 }

@@ -3,8 +3,8 @@ package com.example.tourism_service.dto;
 public class RenewLicenseRequest {
 
     private String licenseCode;
+    private String macAddress;
     private Integer extraDays;
-    private Long userId;
     private String description;
 
     public RenewLicenseRequest() {
@@ -18,20 +18,20 @@ public class RenewLicenseRequest {
         this.licenseCode = licenseCode;
     }
 
+    public String getMacAddress() {
+        return macAddress;
+    }
+
+    public void setMacAddress(String macAddress) {
+        this.macAddress = macAddress;
+    }
+
     public Integer getExtraDays() {
         return extraDays;
     }
 
     public void setExtraDays(Integer extraDays) {
         this.extraDays = extraDays;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public void setUserId(Long userId) {
-        this.userId = userId;
     }
 
     public String getDescription() {
